@@ -1,6 +1,10 @@
 import { Request, Response, NextFunction } from "express";
 import asyncHandler from "../../common/utils/asyncHandler";
 import ApiError from "../../common/utils/ApiError";
+import {
+  bookingsCancelledTotal,
+  bookingsCreatedTotal,
+} from "../../config/metrics";
 import { bookingServices } from "./bookings.service";
 
 const extractUserId = (req: Request) => {
@@ -35,6 +39,7 @@ export const createBooking = asyncHandler(
       { userId: guestId, unitId, bookingId: booking.id },
       "Booking created",
     );
+    bookingsCreatedTotal.inc();
 
     res.status(201).json({
       status: 201,
@@ -87,6 +92,7 @@ export const cancelBooking = asyncHandler(
       { userId: guestId, unitId: booking.unitId, bookingId: booking.id },
       "Booking canceled",
     );
+    bookingsCancelledTotal.inc();
 
     res.status(200).json({
       status: 200,

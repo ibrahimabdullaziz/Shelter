@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import asyncHandler from "../../common/utils/asyncHandler";
 import ApiError from "../../common/utils/ApiError";
+import { favoritesCreatedTotal } from "../../config/metrics";
 import { favoriteServices } from "./unit-favorites.service";
 
 const extractUserId = (req: Request) => {
@@ -25,6 +26,7 @@ export const addFavorite = asyncHandler(
       { userId: guestId, unitId },
       "Unit favorited",
     );
+    favoritesCreatedTotal.inc();
 
     res.status(200).json({
       status: 201,

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import asyncHandler from "../../common/utils/asyncHandler";
 import ApiError from "../../common/utils/ApiError";
+import { reviewsCreatedTotal } from "../../config/metrics";
 import { reviewServices } from "./unit-reviews.service";
 
 const extractUserId = (req: Request) => {
@@ -34,6 +35,7 @@ export const createReview = asyncHandler(
       { userId: guestId, unitId, reviewId: review.id },
       "Review created",
     );
+    reviewsCreatedTotal.inc();
 
     res.status(200).json({
       status: 200,
