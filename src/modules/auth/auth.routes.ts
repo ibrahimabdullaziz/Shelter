@@ -3,6 +3,7 @@ import {
   loginSchema,
   registerSchema,
   resetPasswordSchema,
+  refreshTokenSchema,
   verifyEmailSchema,
 } from "./auth.validation";
 import express from "express";
@@ -11,6 +12,7 @@ import {
   forgotPassword,
   getMe,
   login,
+  logout,
   refresh,
   register,
   resetPassword,
@@ -23,7 +25,8 @@ const authRoutes = express.Router();
 
 authRoutes.post("/register", validate(registerSchema), register);
 authRoutes.post("/login", validate(loginSchema), login);
-authRoutes.post("/refresh", refresh);
+authRoutes.post("/refresh", validate(refreshTokenSchema), refresh);
+authRoutes.post("/logout", validate(refreshTokenSchema), logout);
 authRoutes.get("/me", authGuard, getMe);
 
 // POST /api/auth/verify-email

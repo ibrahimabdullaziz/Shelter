@@ -11,6 +11,7 @@ export type AuthUserRecord = {
 export type AuthPrisma = {
   user: {
     findFirst: (args: unknown) => Promise<AuthUserRecord | null>;
+    findUnique: (args: unknown) => Promise<AuthUserRecord | null>;
     update: (args: unknown) => Promise<AuthUserRecord | null>;
   };
 };

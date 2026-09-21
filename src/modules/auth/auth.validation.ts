@@ -26,6 +26,10 @@ export const resetPasswordSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
+export const refreshTokenSchema = z.object({
+  token: z.string().min(1),
+});
+
 export type RegisterDto = z.infer<typeof registerSchema>;
 export type LoginDto = z.infer<typeof loginSchema>;
 export type VerifyEmailDto = z.infer<typeof verifyEmailSchema>;

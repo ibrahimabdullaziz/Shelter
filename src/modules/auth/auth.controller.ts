@@ -39,12 +39,21 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const { token } = req.body;
 
-  const accessToken = await authServices.refreshService(token);
+  const tokens = await authServices.refreshService(token);
 
   return res.status(200).json({
     status: 200,
     message: "Token refreshed successfully",
-    accessToken,
+    ...tokens,
+  });
+});
+
+export const logout = asyncHandler(async (req: Request, res: Response) => {
+  await authServices.logoutService(req.body.token);
+
+  return res.status(200).json({
+    status: 200,
+    message: "Logged out successfully",
   });
 });
 

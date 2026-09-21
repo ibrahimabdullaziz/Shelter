@@ -34,6 +34,21 @@ model User {
   bookings Booking[]
   reviews UnitReview[]
   favorites UnitFavorite[]
+  refreshSessions RefreshSession[]
+}
+
+model RefreshSession {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  replacedByTokenHash String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
 }
 
 model Country {

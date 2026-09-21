@@ -20,12 +20,10 @@ const toPublicUser = (user: {
   isVerified: user.isVerified,
 });
 
-export async function registerService(data: RegisterDto) {
-  const user = await authServiceDependencies.createUser(data);
-  if (!user) {
-    throw new ApiError(500, "Server Error While Creation Operation");
-  }
+const refreshTokenExpiresAt = () =>
+  new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
+async function issueTokens(user: { id: string; role: string }) {
   const accessToken = authServiceDependencies.signAccessToken({
     id: user.id,
     role: user.role,
@@ -34,6 +32,23 @@ export async function registerService(data: RegisterDto) {
     id: user.id,
     role: user.role,
   });
+
+  await authServiceDependencies.createRefreshSession(
+    user.id,
+    refreshToken,
+    refreshTokenExpiresAt(),
+  );
+
+  return { accessToken, refreshToken };
+}
+
+export async function registerService(data: RegisterDto) {
+  const user = await authServiceDependencies.createUser(data);
+  if (!user) {
+    throw new ApiError(500, "Server Error While Creation Operation");
+  }
+
+  const { accessToken, refreshToken } = await issueTokens(user);
   const otp = await authServiceDependencies.generateOtp(
     user.email,
     "VERIFY_EMAIL",
@@ -73,31 +88,55 @@ export async function loginService(email: string, password: string) {
     throw new ApiError(401, "Invalid credentials");
   }
 
-  const accessToken = authServiceDependencies.signAccessToken({
-    id: user.id,
-    role: user.role,
-  });
-  const refreshToken = authServiceDependencies.signRefreshToken({
-    id: user.id,
-    role: user.role,
-  });
+  const { accessToken, refreshToken } = await issueTokens(user);
 
   return { accessToken, refreshToken, user: toPublicUser(user) };
 }
 
 export async function refreshService(refreshToken: string) {
-  const refreshedToken =
-    await authServiceDependencies.verifyRefreshToken(refreshToken);
-
-  if (!refreshedToken) {
-    throw new ApiError(403, "Unotherized, failed in verifing the credentials");
+  let refreshedToken;
+  try {
+    refreshedToken =
+      await authServiceDependencies.verifyRefreshToken(refreshToken);
+  } catch {
+    throw new ApiError(403, "Unauthorized refresh token");
   }
 
-  const token = authServiceDependencies.signAccessToken({
-    id: refreshedToken.id,
-    role: refreshedToken.role,
+  if (!refreshedToken) {
+    throw new ApiError(403, "Unauthorized refresh token");
+  }
+
+  const user = await authServiceDependencies.findById(refreshedToken.id);
+  if (!user) {
+    throw new ApiError(403, "Unauthorized refresh token");
+  }
+
+  const nextRefreshToken = authServiceDependencies.signRefreshToken({
+    id: user.id,
+    role: user.role,
   });
-  return token;
+  const rotated = await authServiceDependencies.rotateRefreshSession(
+    user.id,
+    refreshToken,
+    nextRefreshToken,
+    refreshTokenExpiresAt(),
+  );
+
+  if (!rotated) {
+    throw new ApiError(403, "Unauthorized refresh token");
+  }
+
+  return {
+    accessToken: authServiceDependencies.signAccessToken({
+      id: user.id,
+      role: user.role,
+    }),
+    refreshToken: nextRefreshToken,
+  };
+}
+
+export async function logoutService(refreshToken: string) {
+  await authServiceDependencies.revokeRefreshToken(refreshToken);
 }
 
 export async function verifyEmailService(email: string, code: string) {
@@ -166,7 +205,7 @@ export async function resetPasswordService(
     throw new ApiError(500, "Failed on updated user password!");
   }
 
-  // TODO: Invalidate existing refresh tokens (known simplification)
+  await authServiceDependencies.revokeAllRefreshSessions(updatedUser.id);
 
   return toPublicUser(updatedUser);
 }
@@ -175,6 +214,7 @@ export const authServices = {
   registerService,
   loginService,
   refreshService,
+  logoutService,
   verifyEmailService,
   forgotPasswordService,
   resetPasswordService,
