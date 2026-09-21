@@ -51,6 +51,7 @@ describe("auth service", () => {
       .stub(authServiceDependencies, "generateOtp")
       .resolves("123456");
     const sendMail = sinon.stub(authServiceDependencies, "sendMail");
+    sinon.stub(authServiceDependencies, "createRefreshSession").resolves();
     const data = {
       email: user.email,
       password: "password123",
@@ -144,6 +145,7 @@ describe("auth service", () => {
     sinon
       .stub(authServiceDependencies, "signRefreshToken")
       .returns("refresh-token");
+    sinon.stub(authServiceDependencies, "createRefreshSession").resolves();
 
     const result = await loginService(user.email, "password123");
 
@@ -171,6 +173,11 @@ describe("auth service", () => {
     sinon
       .stub(authServiceDependencies, "verifyRefreshToken")
       .resolves({ id: user.id, role: user.role });
+    sinon.stub(authServiceDependencies, "findById").resolves(user as never);
+    sinon
+      .stub(authServiceDependencies, "signRefreshToken")
+      .returns("rotated-refresh-token");
+    sinon.stub(authServiceDependencies, "rotateRefreshSession").resolves(true);
     const signAccessToken = sinon
       .stub(authServiceDependencies, "signAccessToken")
       .returns("new-access-token");
@@ -180,7 +187,10 @@ describe("auth service", () => {
     expect(
       signAccessToken.calledWith({ id: user.id, role: user.role }),
     ).to.equal(true);
-    expect(result).to.equal("new-access-token");
+    expect(result).to.deep.equal({
+      accessToken: "new-access-token",
+      refreshToken: "rotated-refresh-token",
+    });
   });
 
   it("verifies the OTP and marks the email verified", async () => {
@@ -217,16 +227,12 @@ describe("auth service", () => {
     }
   });
 
-  it("rejects forgot-password for an unknown user", async () => {
+  it("does not reveal whether a password-reset email exists", async () => {
     sinon.stub(authServiceDependencies.prisma.user, "findFirst").resolves(null);
 
-    try {
-      await forgotPasswordService(user.email);
-      expect.fail("forgotPasswordService should reject");
-    } catch (error) {
-      expect(error).to.have.property("statusCode", 404);
-      expect(error).to.have.property("message", "user not found");
-    }
+    const result = await forgotPasswordService(user.email);
+
+    expect(result).to.equal(undefined);
   });
 
   it("creates a reset OTP and sends reset mail", async () => {
@@ -259,6 +265,7 @@ describe("auth service", () => {
     const update = sinon
       .stub(authServiceDependencies.prisma.user, "update")
       .resolves({ ...user, password: "hashed-password" } as never);
+    sinon.stub(authServiceDependencies, "revokeAllRefreshSessions").resolves();
 
     const result = await resetPasswordService(
       user.email,
@@ -273,10 +280,7 @@ describe("auth service", () => {
         data: { password: "hashed-password" },
       }),
     ).to.equal(true);
-    expect(result).to.deep.equal({
-      ...publicUser,
-      isVerified: false,
-    });
+    expect(result).to.deep.equal(publicUser);
   });
 
   it("forwards reset-password OTP errors", async () => {

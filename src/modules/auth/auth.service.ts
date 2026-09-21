@@ -160,7 +160,7 @@ export async function forgotPasswordService(email: string) {
   });
 
   if (!user) {
-    throw new ApiError(404, "user not found");
+    return;
   }
 
   const otpCode = await authServiceDependencies.generateOtp(

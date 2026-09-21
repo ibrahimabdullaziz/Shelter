@@ -3,9 +3,9 @@ import { otpServiceDependencies } from "./dependencies/otp.dependencies";
 export { otpServiceDependencies } from "./dependencies/otp.dependencies";
 
 export async function generateOtp(email: string, purpose: string) {
-  const generatedCode = Math.floor(
-    100000 + otpServiceDependencies.random() * 900000,
-  ).toString();
+  const generatedCode = otpServiceDependencies
+    .randomInt(100000, 1000000)
+    .toString();
 
   const expireDate = new Date(
     otpServiceDependencies.now().getTime() + 10 * 60 * 1000,
@@ -20,10 +20,13 @@ export async function generateOtp(email: string, purpose: string) {
     },
     update: {
       code: generatedCode,
+      purpose: purpose,
       expiresAt: expireDate,
+      usedAt: null,
+      attempts: 0,
     },
     where: {
-      email: email,
+      email_purpose: { email, purpose },
     },
   });
 
@@ -34,24 +37,33 @@ export async function generateOtp(email: string, purpose: string) {
 }
 
 export async function verifyOtp(email: string, code: string, purpose: string) {
-  const otp = await otpServiceDependencies.prisma.otp.findFirst({
+  const now = otpServiceDependencies.now();
+  const consumed = await otpServiceDependencies.prisma.otp.updateMany({
     where: {
       email: email,
       code: code,
       purpose: purpose,
       usedAt: null,
-      expiresAt: { gt: otpServiceDependencies.now() },
+      expiresAt: { gt: now },
+      attempts: { lt: 5 },
     },
+    data: { usedAt: now },
   });
 
-  if (!otp) {
-    throw new ApiError(400, "Invalid or expired OTP");
+  if (consumed.count === 1) {
+    return true;
   }
 
-  await otpServiceDependencies.prisma.otp.update({
-    where: { id: otp.id },
-    data: { usedAt: new Date() },
+  await otpServiceDependencies.prisma.otp.updateMany({
+    where: {
+      email: email,
+      purpose: purpose,
+      usedAt: null,
+      expiresAt: { gt: now },
+      attempts: { lt: 5 },
+    },
+    data: { attempts: { increment: 1 } },
   });
 
-  return true;
+  throw new ApiError(400, "Invalid or expired OTP");
 }

@@ -113,9 +113,10 @@ describe("auth controller", () => {
   });
 
   it("refreshes a token", async () => {
-    const service = sinon
-      .stub(authServices, "refreshService")
-      .resolves("new-access-token");
+    const service = sinon.stub(authServices, "refreshService").resolves({
+      accessToken: "new-access-token",
+      refreshToken: "rotated-refresh-token",
+    });
     const response = createResponse();
 
     refresh(
@@ -132,6 +133,7 @@ describe("auth controller", () => {
         status: 200,
         message: "Token refreshed successfully",
         accessToken: "new-access-token",
+        refreshToken: "rotated-refresh-token",
       }),
     ).to.equal(true);
   });

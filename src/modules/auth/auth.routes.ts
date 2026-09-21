@@ -19,7 +19,6 @@ import {
   verifyEmail,
 } from "./auth.controller";
 import { authGuard } from "../../common/middleware/authGuard";
-import { verifyEmailService } from "./auth.service";
 
 const authRoutes = express.Router();
 
@@ -28,10 +27,6 @@ authRoutes.post("/login", validate(loginSchema), login);
 authRoutes.post("/refresh", validate(refreshTokenSchema), refresh);
 authRoutes.post("/logout", validate(refreshTokenSchema), logout);
 authRoutes.get("/me", authGuard, getMe);
-
-// POST /api/auth/verify-email
-// POST /api/auth/forgot-password
-// POST /api/auth/reset-password
 
 authRoutes.post("/verify-email", validate(verifyEmailSchema), verifyEmail);
 

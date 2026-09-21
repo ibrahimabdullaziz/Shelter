@@ -21,18 +21,24 @@ const refreshTokenOptions = {
 };
 
 export function signAccessToken(payload: JwtPayload): string {
-  const token = jwt.sign(payload, config.jwtAccessSecret, {
-    ...accessTokenOptions,
-    tokenType: "access",
-  });
+  const token = jwt.sign(
+    { ...payload, tokenType: "access" },
+    config.jwtAccessSecret,
+    {
+      ...accessTokenOptions,
+    },
+  );
   return token;
 }
 
 export function signRefreshToken(payload: JwtPayload): string {
-  const token = jwt.sign(payload, config.jwtRefreshSecret, {
-    ...refreshTokenOptions,
-    tokenType: "refresh",
-  });
+  const token = jwt.sign(
+    { ...payload, tokenType: "refresh" },
+    config.jwtRefreshSecret,
+    {
+      ...refreshTokenOptions,
+    },
+  );
   return token;
 }
 

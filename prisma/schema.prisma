@@ -154,13 +154,15 @@ model UnitFavorite {
 }
 
 model Otp{
-    id     String @id @default(uuid())
-    email String @unique
+  id     String @id @default(uuid())
+  email String
     code String
     purpose String
     expiresAt DateTime
     usedAt DateTime?
+  attempts Int @default(0)
     CreatedAt DateTime @default(now())
 
-    @@index([email,purpose])
+  @@unique([email,purpose])
+  @@index([email,purpose,expiresAt])
 }

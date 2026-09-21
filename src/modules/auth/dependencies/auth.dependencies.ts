@@ -9,7 +9,11 @@ import {
 import { createUser, findByEmail, findById } from "../../users/users.service";
 import { generateOtp, verifyOtp } from "../../otp/otp.service";
 import { sendMail } from "../../mail/mail.service";
-import type { AuthPrisma, AuthUserRecord } from "../types/auth.types";
+import type {
+  AuthPrisma,
+  AuthServiceDependencies,
+  AuthUserRecord,
+} from "../types/auth.types";
 
 const authPrisma: AuthPrisma = {
   user: {
@@ -28,7 +32,7 @@ const authPrisma: AuthPrisma = {
   },
 };
 
-export const authServiceDependencies = {
+export const authServiceDependencies: AuthServiceDependencies = {
   createUser,
   findByEmail,
   findById,

@@ -191,10 +191,12 @@ describe("supporting services", () => {
       const upload = sinon
         .stub(unitPhotoServiceDependencies.cloudinary.uploader, "upload_stream")
         .callsFake((_options, callback) => {
-          (callback as (
-            error: undefined,
-            result: { secure_url: string; public_id: string },
-          ) => void)(undefined, {
+          (
+            callback as (
+              error: undefined,
+              result: { secure_url: string; public_id: string },
+            ) => void
+          )(undefined, {
             secure_url: "https://photo",
             public_id: "public-1",
           });
@@ -253,10 +255,10 @@ describe("supporting services", () => {
   });
 
   describe("OTP", () => {
-    it("generates a deterministic OTP with a ten-minute expiry", async () => {
+    it("generates a secure six-digit OTP with a ten-minute expiry", async () => {
       const now = new Date("2026-09-12T10:00:00.000Z");
       sinon.stub(otpServiceDependencies, "now").returns(now);
-      sinon.stub(otpServiceDependencies, "random").returns(0);
+      sinon.stub(otpServiceDependencies, "randomInt").returns(100000);
       const upsert = sinon
         .stub(otpServiceDependencies.prisma.otp, "upsert")
         .resolves({ code: "100000" });
@@ -278,35 +280,29 @@ describe("supporting services", () => {
     it("verifies a valid OTP and marks it used", async () => {
       const now = new Date("2026-09-12T10:00:00.000Z");
       sinon.stub(otpServiceDependencies, "now").returns(now);
-      const findFirst = sinon
-        .stub(otpServiceDependencies.prisma.otp, "findFirst")
-        .resolves({ id: "otp-1" });
-      const update = sinon
-        .stub(otpServiceDependencies.prisma.otp, "update")
-        .resolves({});
+      const updateMany = sinon
+        .stub(otpServiceDependencies.prisma.otp, "updateMany")
+        .resolves({ count: 1 });
 
       expect(
         await verifyOtp("user@example.com", "100000", "VERIFY_EMAIL"),
       ).to.equal(true);
       expect(
-        findFirst.calledWithMatch({
+        updateMany.calledWithMatch({
           where: {
             email: "user@example.com",
             code: "100000",
             purpose: "VERIFY_EMAIL",
           },
-        }),
-      ).to.equal(true);
-      expect(
-        update.calledWithMatch({
-          where: { id: "otp-1" },
-          data: { usedAt: sinon.match.date },
+          data: { usedAt: now },
         }),
       ).to.equal(true);
     });
 
     it("rejects a missing or expired OTP", async () => {
-      sinon.stub(otpServiceDependencies.prisma.otp, "findFirst").resolves(null);
+      sinon
+        .stub(otpServiceDependencies.prisma.otp, "updateMany")
+        .resolves({ count: 0 });
       await rejectsWithStatus(
         () => verifyOtp("user@example.com", "bad", "VERIFY_EMAIL"),
         400,

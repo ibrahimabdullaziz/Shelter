@@ -1,13 +1,13 @@
 import prisma from "../../../db/prisma";
+import crypto from "node:crypto";
 
 export const otpServiceDependencies: any = {
   prisma: {
     otp: {
       upsert: (args: any) => prisma.otp.upsert(args),
-      findFirst: (args: any) => prisma.otp.findFirst(args),
-      update: (args: any) => prisma.otp.update(args),
+      updateMany: (args: any) => prisma.otp.updateMany(args),
     },
   },
   now: () => new Date(),
-  random: () => Math.random(),
+  randomInt: (min: number, max: number) => crypto.randomInt(min, max),
 };
