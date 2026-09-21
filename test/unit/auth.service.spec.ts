@@ -15,7 +15,19 @@ const user = {
   id: "user-1",
   email: "user@example.com",
   password: "stored-password",
+  firstName: "Ada",
+  lastName: "Lovelace",
   role: "GUEST",
+  isVerified: false,
+};
+
+const publicUser = {
+  id: user.id,
+  email: user.email,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  role: user.role,
+  isVerified: user.isVerified,
 };
 
 function restore() {
@@ -66,7 +78,7 @@ describe("auth service", () => {
     expect(result).to.deep.equal({
       accessToken: "access-token",
       refreshToken: "refresh-token",
-      user,
+      user: publicUser,
     });
   });
 
@@ -138,7 +150,7 @@ describe("auth service", () => {
     expect(result).to.deep.equal({
       accessToken: "access-token",
       refreshToken: "refresh-token",
-      user,
+      user: publicUser,
     });
   });
 
@@ -261,7 +273,10 @@ describe("auth service", () => {
         data: { password: "hashed-password" },
       }),
     ).to.equal(true);
-    expect(result).to.have.property("password", "hashed-password");
+    expect(result).to.deep.equal({
+      ...publicUser,
+      isVerified: false,
+    });
   });
 
   it("forwards reset-password OTP errors", async () => {

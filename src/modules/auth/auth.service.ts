@@ -4,6 +4,22 @@ import { authServiceDependencies } from "./dependencies/auth.dependencies";
 
 export { authServiceDependencies } from "./dependencies/auth.dependencies";
 
+const toPublicUser = (user: {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  isVerified: boolean;
+}) => ({
+  id: user.id,
+  email: user.email,
+  firstName: user.firstName,
+  lastName: user.lastName,
+  role: user.role,
+  isVerified: user.isVerified,
+});
+
 export async function registerService(data: RegisterDto) {
   const user = await authServiceDependencies.createUser(data);
   if (!user) {
@@ -38,7 +54,7 @@ export async function registerService(data: RegisterDto) {
     html: html,
   });
 
-  return { accessToken, refreshToken, user };
+  return { accessToken, refreshToken, user: toPublicUser(user) };
 }
 
 export async function loginService(email: string, password: string) {
@@ -66,7 +82,7 @@ export async function loginService(email: string, password: string) {
     role: user.role,
   });
 
-  return { accessToken, refreshToken, user };
+  return { accessToken, refreshToken, user: toPublicUser(user) };
 }
 
 export async function refreshService(refreshToken: string) {
@@ -92,7 +108,11 @@ export async function verifyEmailService(email: string, code: string) {
     data: { isVerified: true },
   });
 
-  return user;
+  if (!user) {
+    throw new ApiError(500, "Failed to verify user email");
+  }
+
+  return toPublicUser(user);
 }
 
 export async function forgotPasswordService(email: string) {
@@ -148,7 +168,7 @@ export async function resetPasswordService(
 
   // TODO: Invalidate existing refresh tokens (known simplification)
 
-  return updatedUser;
+  return toPublicUser(updatedUser);
 }
 
 export const authServices = {

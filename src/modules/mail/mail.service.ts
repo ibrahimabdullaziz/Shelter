@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import config from "../../config/env";
+import logger from "../../config/logger";
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -35,9 +36,17 @@ export async function sendMail({
 
   transporter.sendMail(mailOptions, (error, info) => {
     if (error) {
-      console.log(error);
+      logger.error(
+        {
+          error: {
+            name: error.name,
+            message: error.message,
+          },
+        },
+        "Email delivery failed",
+      );
     } else {
-      console.log("Email sent: " + info.response);
+      logger.info("Email delivered");
     }
   });
 }

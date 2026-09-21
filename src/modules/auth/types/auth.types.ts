@@ -2,8 +2,10 @@ export type AuthUserRecord = {
   id: string;
   email: string;
   password: string;
+  firstName: string;
+  lastName: string;
   role: string;
-  [key: string]: unknown;
+  isVerified: boolean;
 };
 
 export type AuthPrisma = {
