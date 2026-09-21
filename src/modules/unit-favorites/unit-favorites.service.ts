@@ -3,6 +3,14 @@ import { favoriteServiceDependencies } from "./dependencies/favorites.dependenci
 export { favoriteServiceDependencies } from "./dependencies/favorites.dependencies";
 
 export async function addFavoriteService(userId: string, unitId: string) {
+  const unit = await favoriteServiceDependencies.prisma.unit.findUnique({
+    where: { id: unitId },
+  });
+
+  if (!unit || unit.deletedAt || !unit.isActive) {
+    throw new ApiError(404, "Unit is not available");
+  }
+
   const favoriteItem =
     await favoriteServiceDependencies.prisma.unitFavorite.create({
       data: { userId, unitId },

@@ -45,6 +45,10 @@ async function calculatePrice(unitId: string, checkIn: Date, checkOut: Date) {
     throw new ApiError(404, "Unit is not found!");
   }
 
+  if (unit.deletedAt || !unit.isActive) {
+    throw new ApiError(404, "Unit is not available");
+  }
+
   const numberOfNights: number =
     (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24);
 

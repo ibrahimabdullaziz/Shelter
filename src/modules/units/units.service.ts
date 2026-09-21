@@ -18,6 +18,10 @@ const verifyUnit = async (unitId: string, ownerId: string) => {
     throw new ApiError(404, "This unit is not found");
   }
 
+  if (unit.deletedAt) {
+    throw new ApiError(404, "This unit is not found");
+  }
+
   if (unit.ownerId !== ownerId) {
     throw new ApiError(403, "Not your unit");
   }
@@ -41,6 +45,10 @@ export async function updateUnitService(
   });
 
   if (!unit) {
+    throw new ApiError(404, "this unit is not found");
+  }
+
+  if (unit.deletedAt) {
     throw new ApiError(404, "this unit is not found");
   }
 

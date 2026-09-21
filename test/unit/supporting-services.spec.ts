@@ -63,6 +63,9 @@ describe("supporting services", () => {
 
   describe("favorites", () => {
     it("adds, removes, and lists favorites", async () => {
+      sinon
+        .stub(favoriteServiceDependencies.prisma.unit, "findUnique")
+        .resolves({ isActive: true, deletedAt: null });
       const create = sinon
         .stub(favoriteServiceDependencies.prisma.unitFavorite, "create")
         .resolves({ unitId: "unit-1" });
@@ -96,6 +99,9 @@ describe("supporting services", () => {
 
     it("rejects when adding or removing returns no record", async () => {
       sinon
+        .stub(favoriteServiceDependencies.prisma.unit, "findUnique")
+        .resolves({ isActive: true, deletedAt: null });
+      sinon
         .stub(favoriteServiceDependencies.prisma.unitFavorite, "create")
         .resolves(null);
       await rejectsWithStatus(
@@ -110,6 +116,17 @@ describe("supporting services", () => {
       await rejectsWithStatus(
         () => removeFavoriteService("guest-1", "unit-1"),
         500,
+      );
+    });
+
+    it("rejects favorites for unavailable units", async () => {
+      sinon
+        .stub(favoriteServiceDependencies.prisma.unit, "findUnique")
+        .resolves({ isActive: false, deletedAt: null });
+
+      await rejectsWithStatus(
+        () => addFavoriteService("guest-1", "unit-1"),
+        404,
       );
     });
   });
@@ -224,6 +241,17 @@ describe("supporting services", () => {
         }),
       ).to.equal(true);
       expect(result).to.equal(photo);
+    });
+
+    it("rejects photo uploads to deleted units", async () => {
+      sinon
+        .stub(unitPhotoServiceDependencies.prisma.unit, "findUnique")
+        .resolves({ ...unit, deletedAt: new Date() });
+
+      await rejectsWithStatus(
+        () => uploadUnitPhotoService("unit-1", "host-1", Buffer.from("data")),
+        404,
+      );
     });
 
     it("rejects photo upload by a different owner", async () => {

@@ -4,7 +4,11 @@ export type BookingPrisma = {
   unit: {
     findUnique: (
       args: Prisma.UnitFindUniqueArgs,
-    ) => Promise<{ pricePerNight: number | string } | null>;
+    ) => Promise<{
+      pricePerNight: number | string;
+      isActive: boolean;
+      deletedAt: Date | null;
+    } | null>;
   };
   booking: {
     findFirst: (

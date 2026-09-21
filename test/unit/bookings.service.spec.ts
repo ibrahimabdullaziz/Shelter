@@ -11,7 +11,7 @@ import {
 } from "../../src/modules/bookings/bookings.service";
 
 const prisma = bookingServiceDependencies.prisma;
-const unit = { pricePerNight: 100 };
+const unit = { pricePerNight: 100, isActive: true, deletedAt: null };
 const booking = {
   id: "booking-1",
   unitId: "unit-1",
@@ -95,6 +95,26 @@ describe("bookings service", () => {
     } catch (error) {
       expect(error).to.have.property("statusCode", 404);
       expect(error).to.have.property("message", "Unit is not found!");
+    }
+  });
+
+  it("rejects bookings for inactive units", async () => {
+    sinon.stub(prisma.unit, "findUnique").resolves({
+      ...unit,
+      isActive: false,
+    });
+
+    try {
+      await createBookingService(
+        "guest-1",
+        "unit-1",
+        new Date("2026-10-01"),
+        new Date("2026-10-02"),
+      );
+      expect.fail("createBookingService should reject");
+    } catch (error) {
+      expect(error).to.have.property("statusCode", 404);
+      expect(error).to.have.property("message", "Unit is not available");
     }
   });
 

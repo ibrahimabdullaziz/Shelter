@@ -43,6 +43,10 @@ export async function uploadUnitPhotoService(
     throw new ApiError(404, "This unit is not found");
   }
 
+  if (unit.deletedAt) {
+    throw new ApiError(404, "This unit is not found");
+  }
+
   if (unit.ownerId !== ownerId) {
     throw new ApiError(403, "Not your unit");
   }

@@ -70,6 +70,22 @@ describe("units service", () => {
     }
   });
 
+  it("rejects updates to deleted units", async () => {
+    sinon.stub(prismaUnit(), "findUnique").resolves({
+      ...unit,
+      deletedAt: new Date(),
+    } as never);
+    const update = sinon.stub(prismaUnit(), "update");
+
+    try {
+      await updateUnitService("unit-1", "host-1", { title: "Not allowed" });
+      expect.fail("updateUnitService should reject");
+    } catch (error) {
+      expect(error).to.have.property("statusCode", 404);
+      expect(update.called).to.equal(false);
+    }
+  });
+
   it("lists only active and non-deleted units", async () => {
     const findMany = sinon
       .stub(prismaUnit(), "findMany")
