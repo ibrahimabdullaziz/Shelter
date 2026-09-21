@@ -21,7 +21,12 @@ function errorHandler(
         : err.message;
   }
 
-  const logFields = { err, requestId: req.id, statusCode };
+  const logFields = {
+    requestId: req.id,
+    statusCode,
+    errorName: err instanceof Error ? err.name : "UnknownError",
+    errorMessage: err instanceof Error ? err.message : "Unknown error",
+  };
 
   if (statusCode < 500) {
     req.log.warn(logFields, "Request rejected");

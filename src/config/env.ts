@@ -3,6 +3,7 @@ import "dotenv/config";
 if (
   !process.env.DATABASE_URL ||
   !process.env.JWT_ACCESS_SECRET ||
+  (process.env.NODE_ENV === "production" && !process.env.JWT_REFRESH_SECRET) ||
   !process.env.CLOUDINARY_CLOUD_NAME ||
   !process.env.CLOUDINARY_API_KEY ||
   !process.env.CLOUDINARY_API_SECRET ||
@@ -10,6 +11,10 @@ if (
   !process.env.MAIL_PASS
 ) {
   throw new Error("Missing Some Environment Variables. Check Your .env file");
+}
+
+if (process.env.NODE_ENV === "production" && !process.env.CORS_ORIGINS) {
+  throw new Error("CORS_ORIGINS is required in production");
 }
 
 interface AppConfig {
@@ -25,6 +30,7 @@ interface AppConfig {
   mailUser: string;
   mailPass: string;
   nodeEnv: string;
+  corsOrigins: string[];
 }
 
 const config: AppConfig = {
@@ -39,7 +45,11 @@ const config: AppConfig = {
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET as string,
   mailUser: process.env.MAIL_USER as string,
   mailPass: process.env.MAIL_PASS as string,
-  nodeEnv: process.env.NODE_ENV as string,
+  nodeEnv: process.env.NODE_ENV || "development",
+  corsOrigins: (process.env.CORS_ORIGINS || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
 };
 
 export default config;

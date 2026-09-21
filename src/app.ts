@@ -1,5 +1,9 @@
 import express = require("express");
+import crypto from "node:crypto";
+import cors from "cors";
+import helmet from "helmet";
 import pinoHttp from "pino-http";
+import config from "./config/env";
 import logger from "./config/logger";
 import metrics from "./config/metrics";
 import authRoutes from "./modules/auth/auth.routes";
@@ -20,6 +24,16 @@ import { swaggerDocument, swaggerUi } from "./config/swagger";
 import metricsMiddleware from "./common/middleware/metrics";
 
 const app = express();
+const isProduction = process.env.NODE_ENV === "production";
+
+app.disable("x-powered-by");
+app.use(helmet());
+app.use(
+  cors({
+    origin: isProduction ? config.corsOrigins : true,
+    credentials: false,
+  }),
+);
 
 app.use(
   pinoHttp({
@@ -33,28 +47,18 @@ app.use(
 
 app.use(metricsMiddleware);
 
-app.get("/metrics", async (req, res) => {
-  res.set("Content-Type", metrics.register.contentType);
-  res.end(await metrics.register.metrics());
-});
-
-app.use(express.json());
-
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-app.get("/test", (req, res) => {
-  console.log("CONSOLE TEST");
-
-  req.log.info("PINO TEST");
-
-  res.json({
-    message: "test",
+if (!isProduction) {
+  app.get("/metrics", async (req, res) => {
+    res.set("Content-Type", metrics.register.contentType);
+    res.end(await metrics.register.metrics());
   });
-});
+}
 
-app.get("/test-error", (req, res) => {
-  throw new Error("Something went wrong");
-});
+app.use(express.json({ limit: "1mb" }));
+
+if (!isProduction) {
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+}
 
 app.use("/api/auth", authRoutes);
 app.use("/api/countries", countriesRouter);
