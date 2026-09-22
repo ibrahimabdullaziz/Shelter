@@ -41,7 +41,22 @@ export async function removeFavoriteService(userId: string, unitId: string) {
 export async function listFavoritesService(userId: string) {
   const units = await favoriteServiceDependencies.prisma.unitFavorite.findMany({
     where: { userId: userId },
-    include: { unit: true },
+    include: {
+      unit: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          pricePerNight: true,
+          maxGuests: true,
+          isActive: true,
+          deletedAt: true,
+          cityId: true,
+          currencyId: true,
+          categoryId: true,
+        },
+      },
+    },
   });
 
   return units;

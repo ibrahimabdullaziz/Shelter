@@ -91,7 +91,22 @@ describe("supporting services", () => {
       expect(
         findMany.calledWith({
           where: { userId: "guest-1" },
-          include: { unit: true },
+          include: {
+            unit: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                pricePerNight: true,
+                maxGuests: true,
+                isActive: true,
+                deletedAt: true,
+                cityId: true,
+                currencyId: true,
+                categoryId: true,
+              },
+            },
+          },
         }),
       ).to.equal(true);
       expect(result).to.deep.equal([unit]);

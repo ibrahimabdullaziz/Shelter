@@ -62,7 +62,13 @@ async function checkHost(
 ) {
   const booking = await prisma.booking.findFirst({
     where: { id: bookingId },
-    include: { unit: true },
+    include: {
+      unit: {
+        select: {
+          ownerId: true,
+        },
+      },
+    },
   });
 
   if (!booking) {
@@ -174,7 +180,7 @@ export async function updateBookingService(
 
     const updatedBooking = await tx.booking.update({
       where: { id: bookingId },
-      data: { ...existingBooking, checkIn, checkOut },
+      data: { checkIn, checkOut },
     });
 
     return updatedBooking;
@@ -218,14 +224,44 @@ export async function rejectBookingService(bookingId: string, hostId: string) {
 export async function getGuestBookingsService(guestId: string) {
   return await prisma.booking.findMany({
     where: { guestId },
-    include: { unit: true },
+    include: {
+      unit: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          pricePerNight: true,
+          maxGuests: true,
+          isActive: true,
+          deletedAt: true,
+          cityId: true,
+          currencyId: true,
+          categoryId: true,
+        },
+      },
+    },
   });
 }
 
 export async function getHostBookingsService(hostId: string) {
   return await prisma.booking.findMany({
     where: { unit: { ownerId: hostId } },
-    include: { unit: true },
+    include: {
+      unit: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          pricePerNight: true,
+          maxGuests: true,
+          isActive: true,
+          deletedAt: true,
+          cityId: true,
+          currencyId: true,
+          categoryId: true,
+        },
+      },
+    },
   });
 }
 
