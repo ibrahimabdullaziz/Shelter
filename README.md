@@ -1,23 +1,23 @@
 ﻿# Shelter
 
-A hand-built learning project for a short-term rental / accommodation booking backend.
+A custom Express + TypeScript backend for a short-term rental platform.
 
-This project was created from scratch with Express, TypeScript, Prisma, and PostgreSQL to practice backend architecture, authentication, validation, file uploads, database modeling, and API design.
-
-> The project name is Shelter, but this is not a NestJS app. It is a custom Express backend built manually as a learning project.
+This project is a practical learning backend for accommodation bookings, user authentication, unit management, booking lifecycles, OTP email flows, and Cloudinary image uploads. It is not a NestJS project; it is a manually structured Express API built on Prisma and PostgreSQL.
 
 ## Overview
 
-Shelter is a backend API for a rental marketplace where users can:
+Shelter exposes a REST API for:
 
-- sign up, log in, and manage authentication
-- browse countries, cities, currencies, and property categories
-- create and manage rental units
-- upload unit photos to Cloudinary
-- make bookings for available dates
-- leave reviews on units
-- save favorite units
-- manage OTP-based verification and email flows
+- user registration and login
+- JWT access and refresh authentication
+- OTP-based email verification and password reset flows
+- country, city, currency, and category catalog access
+- unit creation, activation, soft delete, and listing
+- Cloudinary-backed photo uploads
+- guest booking creation and updates
+- host booking confirmation and rejection
+- unit favorites and reviews
+- role-based access protection
 
 ## Tech Stack
 
@@ -28,18 +28,35 @@ Shelter is a backend API for a rental marketplace where users can:
 - PostgreSQL
 - JWT authentication
 - Zod validation
-- Cloudinary for image uploads
-- Nodemailer for email sending
-- Mocha + Chai + Sinon for tests
+- Cloudinary
+- Nodemailer
+- Pino logging
+- Mocha + Chai + Sinon + Supertest
+
+## Current Production Hardening Status
+
+The backend includes the following security protections:
+
+- Helmet security headers
+- CORS configuration
+- JSON request size limiting
+- request ID generation and structured logging
+- redaction of sensitive values in logs
+- safe production error handling
+- auth and authorization failure logging
+- OTP generation with secure randomness
+- OTP attempt limits and atomic verification
+- non-enumerating password reset behavior
+- checks for deleted and inactive units
+- validated image signatures before uploads
+- role-based route protection
 
 ## Project Structure
 
 ```text
 backend/
-
 ├── prisma/
 │   ├── migrations/
-│   │   └── ...
 │   ├── schema.prisma
 │   ├── seed-admin.ts
 │   └── seed.ts
@@ -61,7 +78,10 @@ backend/
 │   │       └── jwt.ts
 │   ├── config/
 │   │   ├── cloudinary.ts
-│   │   └── env.ts
+│   │   ├── env.ts
+│   │   ├── logger.ts
+│   │   ├── metrics.ts
+│   │   └── swagger.ts
 │   ├── db/
 │   │   └── prisma.ts
 │   └── modules/
@@ -80,33 +100,8 @@ backend/
 │       └── users/
 ├── test/
 │   ├── e2e/
-│   │   ├── auth-setup.spec.ts
-│   │   ├── booking-lifecycle.spec.ts
-│   │   ├── booking-setup.spec.ts
-│   │   ├── catalog-setup.spec.ts
-│   │   ├── unit-setup.spec.ts
-│   │   └── helpers/
 │   ├── integration/
-│   │   ├── bookings-availability.spec.ts
-│   │   ├── bookings-lifecycle.spec.ts
-│   │   ├── bookings-transaction.spec.ts
-│   │   ├── cities.spec.ts
-│   │   ├── countries.spec.ts
-│   │   ├── database.spec.ts
-│   │   ├── reviews-favorites.spec.ts
-│   │   ├── units.spec.ts
-│   │   ├── users.spec.ts
-│   │   └── helpers/
 │   └── unit/
-│       ├── auth.controller.spec.ts
-│       ├── auth.service.spec.ts
-│       ├── bookings.controller.spec.ts
-│       ├── bookings.service.spec.ts
-│       ├── reviews-favorites-catalog.controller.spec.ts
-│       ├── supporting-services.spec.ts
-│       ├── unit-photos.controller.spec.ts
-│       ├── units.controller.spec.ts
-│       └── units.service.spec.ts
 ├── .mocharc.json
 ├── .nycrc.json
 ├── package.json
@@ -120,32 +115,45 @@ backend/
 
 Before running the project, make sure you have:
 
-- Node.js 20+ recommended
-- PostgreSQL installed and running
-- A local database created for the app
-- A `.env` file configured with all required variables
+- Node.js 20 or newer
+- PostgreSQL available
+- a configured `.env` file
+- a Cloudinary account
+- SMTP credentials for email delivery
 
 ## Environment Variables
 
-Create a `.env` file in the `backend` folder with values like this:
+Create a `.env` file in the `backend` folder:
 
 ```env
+NODE_ENV=development
 PORT=3000
+
 DATABASE_URL="postgresql://username:password@localhost:5432/shelter"
+
 JWT_ACCESS_SECRET="your-access-secret"
 JWT_REFRESH_SECRET="your-refresh-secret"
+
 SYSTEM_ADMIN_EMAIL="admin@example.com"
 SYSTEM_ADMIN_PASSWORD="admin-password"
+
 CLOUDINARY_CLOUD_NAME="your-cloud-name"
 CLOUDINARY_API_KEY="your-api-key"
 CLOUDINARY_API_SECRET="your-api-secret"
+
 MAIL_USER="your-email@example.com"
 MAIL_PASS="your-email-password"
+
+CORS_ORIGINS="https://your-frontend.com,https://admin.example.com"
 ```
 
-## Installation
+Production note:
 
-From the backend folder:
+- `JWT_REFRESH_SECRET` is required in production mode.
+- `CORS_ORIGINS` is required in production mode.
+- the app exits on startup if required variables are missing.
+
+## Install Dependencies
 
 ```bash
 npm install
@@ -153,37 +161,43 @@ npm install
 
 ## Database Setup
 
-Generate Prisma client and prepare the database:
+Generate the Prisma client and apply migrations:
 
 ```bash
 npx prisma generate
-npx prisma migrate dev --name init
+npx prisma migrate deploy
 ```
 
-If you want to seed an admin user, run:
+For local development with schema changes:
+
+```bash
+npx prisma migrate dev
+```
+
+If you want to seed the admin user:
 
 ```bash
 npx tsx prisma/seed-admin.ts
 ```
 
-## Running the App
+## Run the App
 
-Start the development server with hot reload:
+Development:
 
 ```bash
 npm run dev
 ```
 
-Build for production:
+Production build:
 
 ```bash
 npm run build
 ```
 
-Start the built app:
+Production start:
 
 ```bash
-npm run start
+npm start
 ```
 
 ## Available Scripts
@@ -199,9 +213,9 @@ npm run test:e2e
 npm run test:coverage
 ```
 
-## API Notes
+## API Routes
 
-The app exposes REST endpoints under `/api`, with route groups including:
+The app exposes endpoints under `/api`, including:
 
 - `/api/auth`
 - `/api/countries`
@@ -212,70 +226,74 @@ The app exposes REST endpoints under `/api`, with route groups including:
 - `/api/bookings`
 - `/api/favorites`
 
-The app also uses middleware for:
-
-- request validation
-- authentication
-- authorization
-- centralized error handling
-- logger output via Morgan
-
 ## Testing
 
-This backend includes unit, integration, and end-to-end tests.
+The project includes unit, integration, and end-to-end tests.
 
-### Run all tests
+Run all tests:
 
 ```bash
 npm test
 ```
 
-### Run specific test groups
+Run unit tests only:
 
 ```bash
 npm run test:unit
+```
+
+Run integration tests only:
+
+```bash
 npm run test:integration
+```
+
+Run e2e tests only:
+
+```bash
 npm run test:e2e
 ```
 
-### Coverage
+Coverage:
 
 ```bash
 npm run test:coverage
 npm run test:coverage:critical
 ```
 
-### Test setup notes
+## Production Deployment Checklist
 
-- Unit tests live under `test/unit/`
-- Integration tests live under `test/integration/`
-- End-to-end tests live under `test/e2e/`
-- The project uses Mocha, Chai, Sinon, and Supertest
-- Integration and E2E tests rely on environment variables from `.env.test` via `dotenv-cli`
+Before deploying this backend to production, confirm the following:
 
-## Notes for Learning
+1. `NODE_ENV=production` is set.
+2. `DATABASE_URL` points to the production PostgreSQL instance.
+3. `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` are strong secrets.
+4. `CORS_ORIGINS` contains only trusted frontend origins.
+5. `MAIL_USER` and `MAIL_PASS` are valid SMTP credentials.
+6. `CLOUDINARY_*` values are valid production credentials.
+7. `npx prisma migrate deploy` has been run against the target database.
+8. `npm run build` passes successfully.
+9. the server is started with `npm start` or a process manager like PM2 or systemd.
+10. HTTPS is enabled in front of the backend.
+11. debug or test routes remain disabled in production.
+12. logs do not contain passwords, tokens, or OTP codes.
 
-This is a great project to study if you want to understand:
+## Note on Runtime Deployment
 
-- layered backend architecture
-- Express route + service pattern
-- Prisma schema design
-- JWT-based auth flow
-- reusable validation middleware
-- handling uploads and external services
-- test-driven backend development
+This project is designed to run directly as a Node.js production service rather than through Docker. The verified runtime path is:
+
+```bash
+npm install
+npx prisma generate
+npx prisma migrate deploy
+npm run build
+npm start
+```
+
+## Notes
+
+This backend is intended as a functional Express API and a practical backend-learning project. It is also ready to be extended for stronger scaling, deployment management, and additional production hardening.
 
 ## License
 
-This project is for learning and personal development.
-
-## Future Ideas
-
-Possible extensions include:
-
-- better pagination and filtering
-- booking availability checks
-- admin dashboard endpoints
-- unit search by city/date/price
-- improved refresh-token flow
-- request rate limiting and security hardening
+This project is for learning and personal use.
