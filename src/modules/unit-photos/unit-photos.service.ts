@@ -10,6 +10,10 @@ function uploadBuffer(buffer: Buffer) {
         unitPhotoServiceDependencies.cloudinary.uploader.upload_stream(
           {
             folder: "shelter/units",
+            resource_type: "image",
+            use_filename: false,
+            unique_filename: true,
+            overwrite: false,
           },
           (
             error: UploadApiErrorResponse | undefined,

@@ -8,7 +8,7 @@ import {
   uploadUnitPhoto,
 } from "../../src/modules/unit-photos/unit-photos.controller";
 
-type FakeFile = { buffer: Buffer };
+type FakeFile = { buffer: Buffer; mimetype: string };
 
 function response() {
   const result = {
@@ -48,7 +48,10 @@ describe("unit photo controller", () => {
       .stub(unitPhotoServices, "uploadUnitPhotoService")
       .resolves(photo as never);
     const result = response();
-    const file = { buffer: Buffer.from("photo") };
+    const file = {
+      buffer: Buffer.from([0xff, 0xd8, 0xff, 0x00]),
+      mimetype: "image/jpeg",
+    };
 
     uploadUnitPhoto(
       request({ unitId: "unit-1" }, undefined, file),
@@ -85,6 +88,23 @@ describe("unit photo controller", () => {
     const errorNext = sinon.stub();
 
     uploadUnitPhoto(request(), response(), errorNext);
+    await flush();
+
+    expect(errorNext.calledOnce).to.equal(true);
+    expect(errorNext.firstCall.args[0]).to.have.property("statusCode", 400);
+  });
+
+  it("rejects a file whose content is not an image", async () => {
+    const errorNext = sinon.stub();
+
+    uploadUnitPhoto(
+      request({ unitId: "unit-1" }, undefined, {
+        buffer: Buffer.from("not-an-image"),
+        mimetype: "image/jpeg",
+      }),
+      response(),
+      errorNext,
+    );
     await flush();
 
     expect(errorNext.calledOnce).to.equal(true);

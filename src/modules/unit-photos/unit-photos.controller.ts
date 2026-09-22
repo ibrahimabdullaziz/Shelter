@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import asyncHandler from "../../common/utils/asyncHandler";
 import { unitPhotoServices } from "./unit-photos.service";
 import ApiError from "../../common/utils/ApiError";
+import { hasValidImageSignature } from "../../common/middleware/upload";
 
 export const uploadUnitPhoto = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -14,6 +15,10 @@ export const uploadUnitPhoto = asyncHandler(
 
     if (typeof unitId !== "string" || !file) {
       throw new ApiError(400, "Unit ID and photo file are required");
+    }
+
+    if (!hasValidImageSignature(file.buffer, file.mimetype)) {
+      throw new ApiError(400, "Uploaded file is not a valid image");
     }
 
     const photo = await unitPhotoServices.uploadUnitPhotoService(
