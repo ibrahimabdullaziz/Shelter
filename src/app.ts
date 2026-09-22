@@ -40,7 +40,12 @@ app.use(
     logger,
 
     genReqId: (req) => {
-      return req.headers["x-request-id"] || crypto.randomUUID();
+      const requestId = req.headers["x-request-id"];
+      if (typeof requestId === "string" && /^[a-zA-Z0-9._:-]{1,100}$/.test(requestId)) {
+        return requestId;
+      }
+
+      return crypto.randomUUID();
     },
   }),
 );

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { MulterError } from "multer";
 import ApiError from "../utils/ApiError";
+import config from "../../config/env";
 
 function errorHandler(
   err: unknown,
@@ -21,11 +22,17 @@ function errorHandler(
         : err.message;
   }
 
+  if (config.nodeEnv === "production" && statusCode >= 500) {
+    message = "Internal Server Error";
+  }
+
   const logFields = {
     requestId: req.id,
     statusCode,
     errorName: err instanceof Error ? err.name : "UnknownError",
-    errorMessage: err instanceof Error ? err.message : "Unknown error",
+    ...(config.nodeEnv === "production"
+      ? {}
+      : { errorMessage: err instanceof Error ? err.message : "Unknown error" }),
   };
 
   if (statusCode < 500) {
