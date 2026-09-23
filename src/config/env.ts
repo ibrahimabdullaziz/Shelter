@@ -28,6 +28,7 @@ interface AppConfig {
   cloudinaryApiKey: string;
   cloudinaryApiSecret: string;
   mailUser: string;
+  mailFrom: string;
   sendGridApiKey: string;
   nodeEnv: string;
   corsOrigins: string[];
@@ -44,6 +45,7 @@ const config: AppConfig = {
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY as string,
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET as string,
   mailUser: process.env.MAIL_USER as string,
+  mailFrom: (process.env.MAIL_FROM || process.env.MAIL_USER) as string,
   sendGridApiKey: process.env.SENDGRID_API_KEY as string,
   nodeEnv: process.env.NODE_ENV || "development",
   corsOrigins: (process.env.CORS_ORIGINS || "")

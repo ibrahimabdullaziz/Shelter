@@ -22,25 +22,25 @@ export async function sendMail({
   html: string;
 }) {
   const mailOptions = {
-    from: config.mailUser,
+    from: config.mailFrom,
     to: to,
     subject: subject,
     html: html,
   };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      logger.error(
-        {
-          error: {
-            name: error.name,
-            message: error.message,
-          },
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    logger.info({ messageId: info.messageId }, "Email delivered");
+  } catch (error) {
+    logger.error(
+      {
+        error: {
+          name: error instanceof Error ? error.name : "UnknownError",
+          message: error instanceof Error ? error.message : "Unknown error",
         },
-        "Email delivery failed",
-      );
-    } else {
-      logger.info("Email delivered");
-    }
-  });
+      },
+      "Email delivery failed",
+    );
+    throw error;
+  }
 }

@@ -63,7 +63,7 @@ export async function registerService(data: RegisterDto) {
  </div>
   `;
 
-  authServiceDependencies.sendMail({
+  await authServiceDependencies.sendMail({
     to: user.email,
     subject: "Verify your email",
     html: html,
@@ -177,7 +177,7 @@ export async function forgotPasswordService(email: string) {
  </div>
   `;
 
-  authServiceDependencies.sendMail({
+  await authServiceDependencies.sendMail({
     to: user.email,
     subject: "Reset Password",
     html: html,

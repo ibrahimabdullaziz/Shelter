@@ -142,6 +142,7 @@ CLOUDINARY_API_KEY="your-api-key"
 CLOUDINARY_API_SECRET="your-api-secret"
 
 MAIL_USER="your-email@example.com"
+MAIL_FROM="your-verified-sendgrid-sender@example.com"
 SENDGRID_API_KEY="your-sendgrid-api-key"
 
 CORS_ORIGINS="https://your-frontend.com,https://admin.example.com"
@@ -269,7 +270,7 @@ Before deploying this backend to production, confirm the following:
 2. `DATABASE_URL` points to the production PostgreSQL instance.
 3. `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` are strong secrets.
 4. `CORS_ORIGINS` contains only trusted frontend origins.
-5. `MAIL_USER` is a verified SendGrid sender address and `SENDGRID_API_KEY` is a valid SendGrid API key with mail-sending permission.
+5. `MAIL_FROM` is a verified SendGrid sender address and `SENDGRID_API_KEY` is a valid SendGrid API key with Mail Send permission. `MAIL_USER` is used as a fallback sender.
 6. `CLOUDINARY_*` values are valid production credentials.
 7. `npx prisma migrate deploy` has been run against the target database.
 8. `npm run build` passes successfully.
