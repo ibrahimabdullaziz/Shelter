@@ -22,17 +22,35 @@ export async function sendMail({
     });
 
     if (error) {
-      throw new Error(error.message);
+      const providerError = error as {
+        name?: string;
+        message?: string;
+        statusCode?: number;
+      };
+
+      throw Object.assign(
+        new Error(providerError.message || "Resend rejected the email"),
+        {
+          name: providerError.name || "ResendError",
+          statusCode: providerError.statusCode,
+        },
+      );
     }
 
     logger.info({ messageId: data?.id }, "Email delivered");
   } catch (error) {
+    const mailError = error as {
+      name?: string;
+      message?: string;
+      statusCode?: number;
+    };
+
     logger.error(
       {
-        error: {
-          name: error instanceof Error ? error.name : "UnknownError",
-          message: error instanceof Error ? error.message : "Unknown error",
-        },
+        mailProvider: "resend",
+        errorName: mailError.name || "UnknownError",
+        errorMessage: mailError.message || "Unknown error",
+        statusCode: mailError.statusCode,
       },
       "Email delivery failed",
     );
