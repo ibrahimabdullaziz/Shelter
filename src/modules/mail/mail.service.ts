@@ -1,16 +1,8 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import config from "../../config/env";
 import logger from "../../config/logger";
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.sendgrid.net",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "apikey",
-    pass: config.sendGridApiKey,
-  },
-});
+const resend = new Resend(config.resendApiKey);
 
 export async function sendMail({
   to,
@@ -21,16 +13,19 @@ export async function sendMail({
   subject: string;
   html: string;
 }) {
-  const mailOptions = {
-    from: config.mailFrom,
-    to: to,
-    subject: subject,
-    html: html,
-  };
-
   try {
-    const info = await transporter.sendMail(mailOptions);
-    logger.info({ messageId: info.messageId }, "Email delivered");
+    const { data, error } = await resend.emails.send({
+      from: config.mailFrom,
+      to,
+      subject,
+      html,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    logger.info({ messageId: data?.id }, "Email delivered");
   } catch (error) {
     logger.error(
       {

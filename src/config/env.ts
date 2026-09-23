@@ -8,7 +8,7 @@ if (
   !process.env.CLOUDINARY_API_KEY ||
   !process.env.CLOUDINARY_API_SECRET ||
   !process.env.MAIL_USER ||
-  !process.env.SENDGRID_API_KEY
+  !process.env.RESEND_API_KEY
 ) {
   throw new Error("Missing Some Environment Variables. Check Your .env file");
 }
@@ -29,7 +29,7 @@ interface AppConfig {
   cloudinaryApiSecret: string;
   mailUser: string;
   mailFrom: string;
-  sendGridApiKey: string;
+  resendApiKey: string;
   nodeEnv: string;
   corsOrigins: string[];
 }
@@ -46,7 +46,7 @@ const config: AppConfig = {
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET as string,
   mailUser: process.env.MAIL_USER as string,
   mailFrom: (process.env.MAIL_FROM || process.env.MAIL_USER) as string,
-  sendGridApiKey: process.env.SENDGRID_API_KEY as string,
+  resendApiKey: process.env.RESEND_API_KEY as string,
   nodeEnv: process.env.NODE_ENV || "development",
   corsOrigins: (process.env.CORS_ORIGINS || "")
     .split(",")
