@@ -3,10 +3,12 @@ import config from "../../config/env";
 import logger from "../../config/logger";
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.sendgrid.net",
+  port: 587,
+  secure: false,
   auth: {
-    user: config.mailUser,
-    pass: config.mailPass,
+    user: "apikey",
+    pass: config.sendGridApiKey,
   },
 });
 
@@ -19,14 +21,6 @@ export async function sendMail({
   subject: string;
   html: string;
 }) {
-  //   const html = `
-  //     <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee;">
-  //       <h1 style="color: #4CAF50;">Welcome ${username}</h1>
-  //       <p>Thank you for signing up. Click the button below to get started:</p>
-  //       <a href="https://example.com" style="background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Verify Account</a>
-  //     </div>
-  // `;
-
   const mailOptions = {
     from: config.mailUser,
     to: to,
